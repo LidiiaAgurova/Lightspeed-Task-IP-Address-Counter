@@ -25,9 +25,10 @@ public class CountUniqueIPServiceTest {
 
 		long start = System.currentTimeMillis();
 		//execute algorithm
-		CountUniqueIPService.countUniqueIPs(FILE_PATH + "addresses1.txt");
+		long result = CountUniqueIPService.countUniqueIPs(FILE_PATH + "addresses1.txt");
 		long delta = System.currentTimeMillis() - start;
 
+		assertEquals(990000, result);
 		System.out.println("time: " + delta + " ms");
 	}
 }

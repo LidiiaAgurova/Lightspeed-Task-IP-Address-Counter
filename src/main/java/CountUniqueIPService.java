@@ -15,16 +15,13 @@ import java.util.BitSet;
 
 	Main points:
 
-	1. MappedByteBuffer do not store the whole file, but instead it stores its map in memory. It saves us time and memory.
+	1. MappedByteBuffer do not store the whole file in memory, but instead it stores its map. It saves us time and memory.
 
-	2. BitSet is a convenient structure to store some huge data. The easy way was to create a BitSet with 2^32 capacity - the possible number of IP addresses.
+	2. BitSet is a convenient structure to effectively store bit data. The easy way was to create a BitSet with 2^32 capacity - the possible number of IP addresses.
 	But BitSet can be created only with int capacity, so 2^32 value is too big. That is why we create a BitSet with possible range for each part of the IP (0-255).
 	In case such value is present - we set the value in BitSet to 'true'.
 	For 2nd, 3rd and 4th parts we create a set only if such value is present. If we were able to use single BitSet, 2^32 size would be anyway occupied.
 	And such 4-dimensional structure saves us the memory.
-
-	3. There are no complicated calculations which saves us time. But just in my opinion, in E-Commerce such tasks are executed in the background e.g. as a cron job.
-	In this case we can afford to sacrifice some performance but save memory.
  */
 public class CountUniqueIPService {
 	private static final int BYTE_RANGE = 256;
@@ -74,7 +71,7 @@ public class CountUniqueIPService {
 						}
 					} else if (byteValue == '.') {        // The current part of the IP is finished
 						partIndex++;
-					} else if (byteValue == '\n' || !buffer.hasRemaining()) {     // End of the line or the file
+					} else if (byteValue == '\n' || !buffer.hasRemaining()) {     // End of the line or the buffer
 
 						// If any dimension is null - there was no such IP address value
 						// Create all 4 dimensions for each IP address part

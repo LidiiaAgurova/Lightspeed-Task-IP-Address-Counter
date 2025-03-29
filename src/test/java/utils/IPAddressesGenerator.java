@@ -3,7 +3,9 @@ package utils;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 
 
 /**
@@ -23,6 +25,7 @@ public class IPAddressesGenerator {
 	 */
 	public static void generateIPs(String filePath, int totalIPs, int duplicatedIPs) throws IOException {
 		var random = new Random();
+		Set<String> generatedIPSet = new HashSet<>();
 		int uniqueIPs = totalIPs - duplicatedIPs;
 		int duplicationsCounter = 0;
 		int uniqueCounter = 0;
@@ -31,21 +34,26 @@ public class IPAddressesGenerator {
 
 			// add random IPs to file while the number is not enough
 			while (uniqueCounter < uniqueIPs) {
-				var ip = random.nextInt(256) + "." +
+				var ipAddress = random.nextInt(256) + "." +
 						random.nextInt(256) + "." +
 						random.nextInt(256) + "." +
 						random.nextInt(256);
-				writer.write(ip);
-				writer.newLine();
+				var isAddressAdded = generatedIPSet.add(ipAddress);
 
-				// add duplication for each IP while the number is not enough
-				if (duplicationsCounter < duplicatedIPs) {
-					writer.write(ip);
+				if (isAddressAdded) {
+					// Write IP to file
+					writer.write(ipAddress);
 					writer.newLine();
-					duplicationsCounter++;
-				}
 
-				uniqueCounter++;
+					// add duplication for each IP while the number is not enough
+					if (duplicationsCounter < duplicatedIPs) {
+						writer.write(ipAddress);
+						writer.newLine();
+						duplicationsCounter++;
+					}
+
+					uniqueCounter++;
+				}
 			}
 		}
 	}
