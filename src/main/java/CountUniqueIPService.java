@@ -1,54 +1,100 @@
+import java.io.IOException;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.io.IOException;
 import java.util.BitSet;
 
+
+/**
+	An algorithm to count the number of unique IP addresses in a txt file
+
+	The algorithm reads the bytes from a file. For each IP address it reads all the 4 parts of it.
+	After that all 4 parts are stored in a BitSet[][][] - a 4-dimensional structure to understand which IP addresses are unique.
+	Each time a new value is added to the set, the counter is incremented.
+
+	Main points:
+
+	1. MappedByteBuffer do not store the whole file, but instead it stores its map in memory. It saves us time and memory.
+
+	2. BitSet is a convenient structure to store some huge data. The easy way was to create a BitSet with 2^32 capacity - the possible number of IP addresses.
+	But BitSet can be created only with int capacity, so 2^32 value is too big. That is why we create a BitSet with possible range for each part of the IP (0-255).
+	In case such value is present - we set the value in BitSet to 'true'.
+	For 2nd, 3rd and 4th parts we create a set only if such value is present. If we were able to use single BitSet, 2^32 size would be anyway occupied.
+	And such 4-dimensional structure saves us the memory.
+
+	3. There are no complicated calculations which saves us time. But just in my opinion, in E-Commerce such tasks are executed in the background e.g. as a cron job.
+	In this case we can afford to sacrifice some performance but save memory.
+ */
 public class CountUniqueIPService {
 	private static final int BYTE_RANGE = 256;
-	private static final BitSet[][][] storage = new BitSet[BYTE_RANGE][][];
+	private static final BitSet[][][] IP_ADDRESSES_SET = new BitSet[BYTE_RANGE][][];
 
-	public static long countUniqueIPs(String fileName) throws IOException {
-		// MappedByteBuffer stores a map in a memory. For huge files (e.g. 120GB) we still need to use chunks
-		long position = 0;
-		int chunkSize = 256 * 1024 * 1024; // 256MB chunks
+	public static long countUniqueIPs(String filePath) throws IOException {
 
-		try (FileChannel channel = FileChannel.open(Paths.get(fileName), StandardOpenOption.READ)) {
+		// We are going to use MappedByteBuffer to store a file map in a memory.
+		// But for huge files (e.g. 120GB) we still need to use chunks otherwise we can fill up the memory
+		long positionInFile = 0;
+		int chunkSize = 256 * 1024 * 1024; // 256MB chunks, can be moved to properties file later
+
+		try (var channel = FileChannel.open(Paths.get(filePath), StandardOpenOption.READ)) {
+			var channelSize = channel.size();
 			long uniqueCount = 0;
 
-			while (position < channel.size()) {
-				long remaining = channel.size() - position;
-				int readSize = (int) Math.min(chunkSize, remaining);
+			while (positionInFile < channelSize) {
+				long remainingSize = channelSize - positionInFile;
+				int needToReadSize = (int) Math.min(chunkSize, remainingSize);
 
-				MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, position, readSize);
-				position += readSize;
+				// Create a mapped buffer from current position in file to chunk size (or less if it's the end of file)
+				MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, positionInFile, needToReadSize);
+				positionInFile += needToReadSize;
 
+				// Every IP address is represented in 4 parts
 				int part1 = 0, part2 = 0, part3 = 0, part4 = 0;
 				int partIndex = 0;
 
 				while (buffer.hasRemaining()) {
-					byte b = buffer.get();
-					if (b >= '0' && b <= '9') {
+					byte byteValue = buffer.get();
+					if (byteValue >= '0' && byteValue <= '9') {        // If current byte is a number
 						switch (partIndex) {
-							case 0 -> part1 = part1 * 10 + (b - '0');
-							case 1 -> part2 = part2 * 10 + (b - '0');
-							case 2 -> part3 = part3 * 10 + (b - '0');
-							case 3 -> part4 = part4 * 10 + (b - '0');
+							case 0:
+								// Move the previous number to next decimal
+								// Transform byteValue to int by subtracting '0' char int value
+								part1 = part1 * 10 + (byteValue - '0');
+								break;
+							case 1:
+								part2 = part2 * 10 + (byteValue - '0');
+								break;
+							case 2:
+								part3 = part3 * 10 + (byteValue - '0');
+								break;
+							case 3:
+								part4 = part4 * 10 + (byteValue - '0');
+								break;
 						}
-					} else if (b == '.') {
+					} else if (byteValue == '.') {        // The current part of the IP is finished
 						partIndex++;
-					} else if (b == '\n' || !buffer.hasRemaining()) { // End of line or file
-						if (storage[part1] == null) storage[part1] = new BitSet[BYTE_RANGE][];
-						if (storage[part1][part2] == null) storage[part1][part2] = new BitSet[BYTE_RANGE];
-						if (storage[part1][part2][part3] == null) storage[part1][part2][part3] = new BitSet(BYTE_RANGE);
+					} else if (byteValue == '\n' || !buffer.hasRemaining()) {     // End of the line or the file
 
-						if (!storage[part1][part2][part3].get(part4)) {
-							storage[part1][part2][part3].set(part4);
+						// If any dimension is null - there was no such IP address value
+						// Create all 4 dimensions for each IP address part
+						if (IP_ADDRESSES_SET[part1] == null) {
+							IP_ADDRESSES_SET[part1] = new BitSet[BYTE_RANGE][];
+						}
+						if (IP_ADDRESSES_SET[part1][part2] == null) {
+							IP_ADDRESSES_SET[part1][part2] = new BitSet[BYTE_RANGE];
+						}
+						if (IP_ADDRESSES_SET[part1][part2][part3] == null) {
+							IP_ADDRESSES_SET[part1][part2][part3] = new BitSet(BYTE_RANGE);
+						}
+
+						// All 4 dimensions are present - set a unique value and increment
+						if (!IP_ADDRESSES_SET[part1][part2][part3].get(part4)) {
+							IP_ADDRESSES_SET[part1][part2][part3].set(part4);
 							uniqueCount++;
 						}
 
-						// Reset for next IP
+						// Reset all values to 0 for the next IP processing
 						part1 = part2 = part3 = part4 = 0;
 						partIndex = 0;
 					}

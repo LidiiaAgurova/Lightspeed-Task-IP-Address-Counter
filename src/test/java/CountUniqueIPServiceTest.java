@@ -1,6 +1,5 @@
 import org.junit.jupiter.api.Test;
-import utils.FileConstants;
-import utils.IPGenerator;
+import utils.IPAddressesGenerator;
 
 import java.io.IOException;
 
@@ -8,12 +7,27 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 public class CountUniqueIPServiceTest {
+	public final static String FILE_PATH = "src/main/resources/";
 
 	@Test
 	void shouldCountUniqueAddresses() throws IOException {
-		IPGenerator.generateRandomIPs(FileConstants.FILE_NAME, FileConstants.TOTAL_IP_NUMBER, FileConstants.DUPLICATED_IP_NUMBER);
-		long result = CountUniqueIPService.countUniqueIPs(FileConstants.FILE_NAME);
+		IPAddressesGenerator.generateIPs(FILE_PATH + "addresses.txt", 1000, 100);
 
-		assertEquals( 900, result);
+		//execute algorithm
+		long result = CountUniqueIPService.countUniqueIPs(FILE_PATH + "addresses.txt");
+
+		assertEquals(900, result);
+	}
+
+	@Test
+	void shouldCountUniqueAddressesAndMeasureTime() throws IOException {
+		IPAddressesGenerator.generateIPs(FILE_PATH + "addresses1.txt", 1000000, 10000);
+
+		long start = System.currentTimeMillis();
+		//execute algorithm
+		CountUniqueIPService.countUniqueIPs(FILE_PATH + "addresses1.txt");
+		long delta = System.currentTimeMillis() - start;
+
+		System.out.println("time: " + delta + " ms");
 	}
 }
