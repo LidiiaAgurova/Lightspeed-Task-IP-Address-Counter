@@ -14,7 +14,7 @@ public class CountUniqueIPServiceTest {
 		IPAddressesGenerator.generateIPs(FILE_PATH + "addresses.txt", 1000, 100);
 
 		//execute algorithm
-		long result = CountUniqueIPService.countUniqueIPs(FILE_PATH + "addresses.txt");
+		long result = new CountUniqueIPService().countUniqueIPs(FILE_PATH + "addresses.txt");
 
 		assertEquals(900, result);
 	}
@@ -25,7 +25,7 @@ public class CountUniqueIPServiceTest {
 
 		long start = System.currentTimeMillis();
 		//execute algorithm
-		long result = CountUniqueIPService.countUniqueIPs(FILE_PATH + "addresses1.txt");
+		long result = new CountUniqueIPService().countUniqueIPs(FILE_PATH + "addresses1.txt");
 		long delta = System.currentTimeMillis() - start;
 
 		assertEquals(990000, result);

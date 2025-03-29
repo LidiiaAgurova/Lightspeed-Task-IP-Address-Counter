@@ -25,9 +25,9 @@ import java.util.BitSet;
  */
 public class CountUniqueIPService {
 	private static final int BYTE_RANGE = 256;
-	private static final BitSet[][][] IP_ADDRESSES_SET = new BitSet[BYTE_RANGE][][];
+	private final BitSet[][][] IP_ADDRESSES_SET = new BitSet[BYTE_RANGE][][];
 
-	public static long countUniqueIPs(String filePath) throws IOException {
+	public long countUniqueIPs(String filePath) throws IOException {
 
 		// We are going to use MappedByteBuffer to store a file map in a memory.
 		// But for huge files (e.g. 120GB) we still need to use chunks otherwise we can fill up the memory
