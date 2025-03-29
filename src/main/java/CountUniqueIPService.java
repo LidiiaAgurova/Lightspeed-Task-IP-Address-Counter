@@ -7,11 +7,13 @@ import java.util.BitSet;
 
 
 /**
-	An algorithm to count the number of unique IP addresses in a txt file
+	An algorithm to count the number of unique IP addresses in a txt file.
 
 	The algorithm reads the bytes from a file. For each IP address it reads all the 4 parts of it.
 	After that all 4 parts are stored in a BitSet[][][] - a 4-dimensional structure to understand which IP addresses are unique.
 	Each time a new value is added to the set, the counter is incremented.
+
+  	The algorithm works for the files with valid IP addresses. Validation can be added later.
 
 	Main points:
 
